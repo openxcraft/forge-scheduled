@@ -1,0 +1,17 @@
+id: refactor-trigger
+cron: "0 0 * * 0"
+scope: refactor
+depends_on: ["monitor"]
+preconditions:
+  - {kind: "exists", path: "/work/reports/coherence.json"}
+  - {kind: "gate", gate_id: "stop-honored"}
+effects:
+  - {kind: "run", cmd: "python3 /work/runtime/executor.py refactor assess"}
+  - {kind: "llm", prompt_template: "refactor-plan", output: "/work/projects/<active>/roadmap/refactor.json", schema: "roadmap"}
+  - {kind: "decide", path: "/work/decisions/refactor-<n>.json", question: "trigger refactor", options: ["yes", "no"], chosen: "no", verified_by: "decision-present"}
+  - {kind: "evidence", path: "/work/evidence/refactor-<n>.json"}
+postconditions:
+  - {kind: "gate", gate_id: "decision-present"}
+retry: {on: ["llm_failed", "io_error"], max: 2, backoff: "exponential"}
+rollback: []
+policy: {autonomous: true, human_gate: none, budget_minutes: 30, on_fail: "continue"}

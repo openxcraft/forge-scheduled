@@ -1,0 +1,14 @@
+id: archive-prune
+cron: "0 */6 * * *"
+scope: archive
+depends_on: ["ledger-rotate"]
+preconditions:
+  - {kind: "exists", path: "/work/archive"}
+effects:
+  - {kind: "run", cmd: "python3 /work/runtime/state.py prune-archives --soft-limit 85 --hard-limit 95"}
+  - {kind: "evidence", path: "/work/evidence/archive-prune-<n>.json"}
+postconditions:
+  - {kind: "command", cmd: "test $(df -P /work | awk 'NR==2 {print $5}' | tr -d '%') -lt 96"}
+retry: {on: ["io_error"], max: 2, backoff: "linear"}
+rollback: []
+policy: {autonomous: true, human_gate: none, budget_minutes: 3, on_fail: "continue"}

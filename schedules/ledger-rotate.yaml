@@ -1,0 +1,14 @@
+id: ledger-rotate
+cron: "0 1 * * *"
+scope: ledger
+depends_on: ["bootstrap-once"]
+preconditions:
+  - {kind: "exists", path: "/work/ledger/entries.jsonl"}
+effects:
+  - {kind: "run", cmd: "python3 /work/runtime/state.py rotate-ledger"}
+  - {kind: "evidence", path: "/work/evidence/ledger-rotate-<n>.json"}
+postconditions:
+  - {kind: "exists", path: "/work/ledger/state.json"}
+retry: {on: ["io_error"], max: 2, backoff: "linear"}
+rollback: []
+policy: {autonomous: true, human_gate: none, budget_minutes: 2, on_fail: "continue"}

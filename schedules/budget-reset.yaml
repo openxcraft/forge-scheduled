@@ -1,0 +1,14 @@
+id: budget-reset
+cron: "0 0 * * *"
+scope: budget
+depends_on: ["bootstrap-once"]
+preconditions:
+  - {kind: "exists", path: "/work/budget/state.json"}
+effects:
+  - {kind: "run", cmd: "python3 /work/runtime/budget.py reset-daily"}
+  - {kind: "evidence", path: "/work/evidence/budget-reset-<n>.json"}
+postconditions:
+  - {kind: "command", cmd: "python3 -c \"import json; b=json.load(open(\"/work/budget/state.json\")); assert b[\"spent_daily_usd\"]==0\""}
+retry: {on: ["io_error"], max: 3, backoff: "linear"}
+rollback: []
+policy: {autonomous: true, human_gate: none, budget_minutes: 1, on_fail: "continue"}

@@ -1,0 +1,15 @@
+id: health-report
+cron: "*/10 * * * *"
+scope: reports
+depends_on: ["bootstrap-once"]
+preconditions:
+  - {kind: "exists", path: "/work/ledger/state.json"}
+effects:
+  - {kind: "run", cmd: "python3 /work/runtime/executor.py health build"}
+  - {kind: "run", cmd: "python3 /work/runtime/executor.py metrics emit"}
+postconditions:
+  - {kind: "exists", path: "/work/reports/health.json"}
+  - {kind: "exists", path: "/work/reports/metrics.prom"}
+retry: {on: ["io_error"], max: 2, backoff: "linear"}
+rollback: []
+policy: {autonomous: true, human_gate: none, budget_minutes: 1, on_fail: "continue"}
