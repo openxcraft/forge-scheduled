@@ -1,0 +1,33 @@
+name: Repository validation
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Validate Python syntax
+        run: python -m compileall -q runtime
+
+      - name: Validate schedule definitions
+        env:
+          FORGE_WORK: ${{ github.workspace }}
+        run: python runtime/state.py validate-schedules
+
+      - name: Validate JSON schemas
+        shell: bash
+        run: |
+          set -euo pipefail
+          for schema in schemas/*.json; do
+            python -m json.tool "$schema" >/dev/null
+          done
