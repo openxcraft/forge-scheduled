@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "status"],
+  "additionalProperties": true,
+  "properties": {
+    "id": {"type": "string"},
+    "status": {"type": "string", "enum": ["draft", "active", "paused", "complete", "retired"]},
+    "objectives": {"type": "array", "items": {"type": "string"}},
+    "created_at": {"type": "string"}
+  }
+}

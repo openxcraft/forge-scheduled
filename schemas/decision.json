@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["time", "question", "options", "chosen", "rejected", "reason", "verified_by"],
+  "additionalProperties": true,
+  "properties": {
+    "time": {"type": "string"},
+    "question": {"type": "string"},
+    "options": {"type": "array", "minItems": 2, "items": {"type": "string"}},
+    "chosen": {"type": "string"},
+    "rejected": {"type": "array", "items": {"type": "string"}},
+    "reason": {"type": "string"},
+    "verified_by": {"type": "string"}
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "target", "summary", "findings", "approved"],
+  "additionalProperties": true,
+  "properties": {
+    "id": {"type": "string"},
+    "target": {"type": "string"},
+    "summary": {"type": "string"},
+    "findings": {"type": "array", "items": {"type": "object", "required": ["severity", "message"], "properties": {"severity": {"type": "string", "enum": ["info", "low", "medium", "high", "critical"]}, "message": {"type": "string"}}}},
+    "approved": {"type": "boolean"},
+    "created_at": {"type": "string"}
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "period", "objectives", "tasks"],
+  "additionalProperties": true,
+  "properties": {
+    "id": {"type": "string"},
+    "period": {"type": "string"},
+    "created_at": {"type": "string"},
+    "objectives": {"type": "array", "items": {"type": "string"}},
+    "tasks": {"type": "array", "items": {"type": "object", "required": ["id", "title", "status"], "additionalProperties": true, "properties": {"id": {"type": "string"}, "title": {"type": "string"}, "status": {"type": "string"}}}}
+  }
+}

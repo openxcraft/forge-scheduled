@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "cron", "scope", "depends_on", "preconditions", "effects", "postconditions", "retry", "rollback", "policy"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+    "cron": {"type": "string"},
+    "scope": {"type": "string"},
+    "depends_on": {"type": "array", "items": {"type": "string"}},
+    "preconditions": {"type": "array", "items": {"$ref": "#/definitions/condition"}},
+    "effects": {"type": "array", "minItems": 1, "items": {"$ref": "#/definitions/effect"}},
+    "postconditions": {"type": "array", "items": {"$ref": "#/definitions/condition"}},
+    "retry": {"type": "object", "required": ["on", "max", "backoff"], "additionalProperties": false, "properties": {"on": {"type": "array", "items": {"type": "string"}}, "max": {"type": "integer", "minimum": 0}, "backoff": {"type": "string", "enum": ["linear", "exponential"]}}},
+    "rollback": {"type": "array", "items": {"$ref": "#/definitions/effect"}},
+    "policy": {"type": "object", "required": ["autonomous", "human_gate", "budget_minutes", "on_fail"], "additionalProperties": false, "properties": {"autonomous": {"type": "boolean"}, "human_gate": {"type": "string", "enum": ["none"]}, "budget_minutes": {"type": "integer", "minimum": 1}, "on_fail": {"type": "string", "enum": ["continue", "halt", "replan", "skip"]}}}
+  },
+  "definitions": {
+    "condition": {"type": "object", "required": ["kind"], "additionalProperties": true, "properties": {"kind": {"type": "string", "enum": ["exists", "absent", "equals", "matches", "command", "gate"]}}},
+    "effect": {"type": "object", "required": ["kind"], "additionalProperties": true, "properties": {"kind": {"type": "string", "enum": ["write", "append", "run", "delete", "move", "evidence", "decide", "llm"]}}}
+  }
+}

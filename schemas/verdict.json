@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "status", "reasons"],
+  "additionalProperties": true,
+  "properties": {
+    "id": {"type": "string"},
+    "status": {"type": "string", "enum": ["pass", "fail", "waived"]},
+    "reasons": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "evidence": {"type": "array", "items": {"type": "string"}},
+    "decision": {"type": "string"},
+    "created_at": {"type": "string"}
+  }
+}

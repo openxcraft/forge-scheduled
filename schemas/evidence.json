@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["time", "raw", "sha256"],
+  "additionalProperties": true,
+  "properties": {
+    "time": {"type": "string"},
+    "source": {"type": "string"},
+    "raw": {"type": "string"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
