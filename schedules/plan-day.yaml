@@ -1,0 +1,17 @@
+id: plan-day
+cron: "0 */6 * * *"
+scope: roadmap-day
+depends_on: ["plan-week"]
+preconditions:
+  - {kind: "exists", path: "/work/projects/registry.json"}
+  - {kind: "gate", gate_id: "stop-honored"}
+effects:
+  - {kind: "llm", prompt_template: "day-plan", output: "/work/projects/<active>/roadmap/day.json", schema: "roadmap"}
+  - {kind: "decide", path: "/work/decisions/cycle-<n>-day-plan.json", question: "day roadmap revision", options: ["revise", "keep"], chosen: "revise", verified_by: "decision-present"}
+  - {kind: "evidence", path: "/work/evidence/cycle-<n>-day-plan.json"}
+postconditions:
+  - {kind: "gate", gate_id: "decision-present"}
+  - {kind: "gate", gate_id: "evidence-present"}
+retry: {on: ["llm_failed", "io_error"], max: 3, backoff: "exponential"}
+rollback: [{kind: "run", cmd: "git -C /work checkout -- projects/$(python3 -c \"import json;print(json.load(open(\"/work/projects/registry.json\"))[\"active\"])\")/roadmap/day.json"}]
+policy: {autonomous: true, human_gate: none, budget_minutes: 10, on_fail: "continue"}

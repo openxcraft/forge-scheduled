@@ -1,0 +1,17 @@
+id: plan-month
+cron: "0 0 * * 1"
+scope: roadmap-month
+depends_on: ["plan-year"]
+preconditions:
+  - {kind: "exists", path: "/work/projects/registry.json"}
+  - {kind: "gate", gate_id: "stop-honored"}
+effects:
+  - {kind: "llm", prompt_template: "month-plan", output: "/work/projects/<active>/roadmap/month.json", schema: "roadmap"}
+  - {kind: "decide", path: "/work/decisions/cycle-<n>-month-plan.json", question: "month roadmap revision", options: ["revise", "keep"], chosen: "revise", verified_by: "decision-present"}
+  - {kind: "evidence", path: "/work/evidence/cycle-<n>-month-plan.json"}
+postconditions:
+  - {kind: "gate", gate_id: "decision-present"}
+  - {kind: "gate", gate_id: "evidence-present"}
+retry: {on: ["llm_failed", "io_error"], max: 3, backoff: "exponential"}
+rollback: [{kind: "run", cmd: "git -C /work checkout -- projects/$(python3 -c \"import json;print(json.load(open(\"/work/projects/registry.json\"))[\"active\"])\")/roadmap/month.json"}]
+policy: {autonomous: true, human_gate: none, budget_minutes: 20, on_fail: "continue"}

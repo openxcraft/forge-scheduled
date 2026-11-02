@@ -1,0 +1,27 @@
+id: bootstrap-once
+cron: "@reboot"
+scope: workspace
+depends_on: []
+preconditions:
+  - {kind: "exists", path: "/work"}
+effects:
+  - {kind: "run", cmd: "mkdir -p /work/{schedules,runtime,gates/core,gates/project,schemas,evidence,decisions,projects,ledger,budget,reports,keys,archive}"}
+  - {kind: "run", cmd: "cd /work && git init -q && git config user.name forge-system && git config user.email forge@system.invalid && git config commit.gpgsign true && git config gpg.format ssh"}
+  - {kind: "run", cmd: "test -f /work/keys/current.key || openssl genpkey -algorithm ED25519 -out /work/keys/current.key && chmod 600 /work/keys/current.key"}
+  - {kind: "run", cmd: "test -f /work/keys/current.pub || openssl pkey -in /work/keys/current.key -pubout -out /work/keys/current.pub"}
+  - {kind: "run", cmd: "test -f /work/keys/git-ed25519 || ssh-keygen -q -t ed25519 -N \"\" -f /work/keys/git-ed25519 && chmod 600 /work/keys/git-ed25519"}
+  - {kind: "run", cmd: "git -C /work config user.signingkey /work/keys/git-ed25519"}
+  - {kind: "run", cmd: "printf \"forge-system \" > /work/keys/allowed_signers && cat /work/keys/git-ed25519.pub >> /work/keys/allowed_signers"}
+  - {kind: "run", cmd: "git -C /work config gpg.ssh.allowedSignersFile /work/keys/allowed_signers"}
+  - {kind: "run", cmd: "test -f /work/ledger/state.json || printf %s {\"cycle\":0,\"last_started\":null,\"last_finished\":null} > /work/ledger/state.json"}
+  - {kind: "run", cmd: "test -f /work/projects/registry.json || printf %s {\"active\":\"default\",\"projects\":{\"default\":{\"status\":\"active\"}}} > /work/projects/registry.json"}
+  - {kind: "run", cmd: "touch /work/ledger/audit.ndjson /work/ledger/entries.jsonl"}
+  - {kind: "run", cmd: "chmod +x /work/gates/core/*.sh"}
+  - {kind: "run", cmd: "touch /work/READY"}
+postconditions:
+  - {kind: "exists", path: "/work/ledger/state.json"}
+  - {kind: "exists", path: "/work/keys/current.key"}
+  - {kind: "exists", path: "/work/READY"}
+retry: {on: ["io_error", "command_failed"], max: 3, backoff: "exponential"}
+rollback: []
+policy: {autonomous: true, human_gate: none, budget_minutes: 5, on_fail: "halt"}

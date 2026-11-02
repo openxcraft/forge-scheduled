@@ -1,0 +1,17 @@
+id: plan-year
+cron: "0 0 1 * *"
+scope: roadmap-year
+depends_on: ["bootstrap-once"]
+preconditions:
+  - {kind: "exists", path: "/work/projects/registry.json"}
+  - {kind: "gate", gate_id: "stop-honored"}
+effects:
+  - {kind: "llm", prompt_template: "year-plan", output: "/work/projects/<active>/roadmap/year.json", schema: "roadmap"}
+  - {kind: "decide", path: "/work/decisions/cycle-<n>-year-plan.json", question: "year roadmap revision", options: ["revise", "keep"], chosen: "revise", verified_by: "decision-present"}
+  - {kind: "evidence", path: "/work/evidence/cycle-<n>-year-plan.json"}
+postconditions:
+  - {kind: "gate", gate_id: "decision-present"}
+  - {kind: "gate", gate_id: "evidence-present"}
+retry: {on: ["llm_failed", "io_error"], max: 3, backoff: "exponential"}
+rollback: [{kind: "run", cmd: "git -C /work checkout -- projects/$(python3 -c \"import json;print(json.load(open(\"/work/projects/registry.json\"))[\"active\"])\")/roadmap/year.json"}]
+policy: {autonomous: true, human_gate: none, budget_minutes: 30, on_fail: "continue"}
