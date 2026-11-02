@@ -1,0 +1,16 @@
+id: gate-audit
+cron: "0 * * * *"
+scope: gates
+depends_on: ["bootstrap-once"]
+preconditions:
+  - {kind: "exists", path: "/work/gates/core"}
+  - {kind: "gate", gate_id: "stop-honored"}
+effects:
+  - {kind: "run", cmd: "python3 /work/runtime/gates.py audit-no-stubs"}
+  - {kind: "run", cmd: "python3 /work/runtime/gates.py audit-real-tools"}
+  - {kind: "evidence", path: "/work/evidence/gate-audit-<n>.json"}
+postconditions:
+  - {kind: "command", cmd: "test $(grep -rEl \"^exit 0$\" /work/gates/core/*.sh 2>/dev/null | wc -l) -eq 0"}
+retry: {on: ["io_error"], max: 2, backoff: "linear"}
+rollback: []
+policy: {autonomous: true, human_gate: none, budget_minutes: 2, on_fail: "continue"}

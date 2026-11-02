@@ -1,0 +1,16 @@
+id: contract-audit
+cron: "0 * * * *"
+scope: contracts
+depends_on: ["integrate"]
+preconditions:
+  - {kind: "exists", path: "/work/projects/registry.json"}
+  - {kind: "gate", gate_id: "stop-honored"}
+effects:
+  - {kind: "run", cmd: "python3 /work/runtime/contracts.py freeze-stable"}
+  - {kind: "run", cmd: "python3 /work/runtime/contracts.py verify-conformance"}
+  - {kind: "evidence", path: "/work/evidence/contract-audit-<n>.json"}
+postconditions:
+  - {kind: "gate", gate_id: "contract-conformance"}
+retry: {on: ["io_error"], max: 2, backoff: "linear"}
+rollback: []
+policy: {autonomous: true, human_gate: none, budget_minutes: 5, on_fail: "continue"}

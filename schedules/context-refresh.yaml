@@ -1,0 +1,17 @@
+id: context-refresh
+cron: "0 */2 * * *"
+scope: context
+depends_on: ["integrate"]
+preconditions:
+  - {kind: "exists", path: "/work/projects/registry.json"}
+  - {kind: "gate", gate_id: "stop-honored"}
+effects:
+  - {kind: "run", cmd: "python3 /work/runtime/context.py regenerate-all-module-summaries"}
+  - {kind: "run", cmd: "python3 /work/runtime/context.py regenerate-architecture"}
+  - {kind: "run", cmd: "python3 /work/runtime/context.py regenerate-roadmap-digest"}
+  - {kind: "evidence", path: "/work/evidence/context-refresh-<n>.json"}
+postconditions:
+  - {kind: "command", cmd: "python3 /work/runtime/context.py verify-current"}
+retry: {on: ["io_error"], max: 2, backoff: "linear"}
+rollback: []
+policy: {autonomous: true, human_gate: none, budget_minutes: 10, on_fail: "continue"}
