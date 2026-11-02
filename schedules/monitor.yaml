@@ -1,0 +1,19 @@
+id: monitor
+cron: "*/5 * * * *"
+scope: monitor
+depends_on: ["integrate"]
+preconditions:
+  - {kind: "exists", path: "/work/ledger/entries.jsonl"}
+  - {kind: "gate", gate_id: "stop-honored"}
+effects:
+  - {kind: "run", cmd: "python3 /work/runtime/executor.py monitor trends"}
+  - {kind: "run", cmd: "python3 /work/runtime/executor.py monitor coherence"}
+  - {kind: "run", cmd: "python3 /work/runtime/executor.py monitor budget"}
+  - {kind: "decide", path: "/work/decisions/monitor-<n>.json", question: "state correction needed", options: ["none", "downgrade-model", "freeze-features", "trigger-refactor", "rollback-20"], chosen: "none", verified_by: "decision-present"}
+  - {kind: "evidence", path: "/work/evidence/monitor-<n>.json"}
+postconditions:
+  - {kind: "exists", path: "/work/reports/health.json"}
+  - {kind: "exists", path: "/work/reports/coherence.json"}
+retry: {on: ["io_error"], max: 2, backoff: "linear"}
+rollback: []
+policy: {autonomous: true, human_gate: none, budget_minutes: 2, on_fail: "continue"}

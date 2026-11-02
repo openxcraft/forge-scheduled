@@ -1,0 +1,20 @@
+id: worker-2
+cron: "5,20,35,50 * * * *"
+scope: worker
+depends_on: ["dispatch"]
+preconditions:
+  - {kind: "exists", path: "/work/runtime/queue/worker-2.task.json"}
+  - {kind: "gate", gate_id: "stop-honored"}
+effects:
+  - {kind: "run", cmd: "python3 /work/runtime/executor.py worker-2 claim"}
+  - {kind: "run", cmd: "python3 /work/runtime/context.py load-module-context --worker 2"}
+  - {kind: "llm", prompt_template: "worker-task", output: "/work/runtime/queue/worker-2.output.json", schema: "worker_output"}
+  - {kind: "run", cmd: "python3 /work/runtime/executor.py worker-2 apply"}
+  - {kind: "run", cmd: "python3 /work/runtime/executor.py worker-2 local-gates"}
+  - {kind: "evidence", path: "/work/evidence/worker-2-cycle-<n>.json"}
+  - {kind: "decide", path: "/work/decisions/worker-2-cycle-<n>.json", question: "worker output approval", options: ["accept", "reject"], chosen: "accept", verified_by: "decision-present"}
+postconditions:
+  - {kind: "command", cmd: "test -f /work/runtime/queue/worker-2.done || test -f /work/runtime/queue/worker-2.failed"}
+retry: {on: ["llm_failed", "gate_failed", "io_error"], max: 3, backoff: "exponential"}
+rollback: [{kind: "run", cmd: "python3 /work/runtime/executor.py worker-2 rollback"}]
+policy: {autonomous: true, human_gate: none, budget_minutes: 12, on_fail: "continue"}

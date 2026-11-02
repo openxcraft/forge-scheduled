@@ -1,0 +1,22 @@
+id: integrate
+cron: "*/20 * * * *"
+scope: integrator
+depends_on: ["worker-1", "worker-2", "worker-3", "worker-4"]
+preconditions:
+  - {kind: "command", cmd: "test $(find /work/runtime/queue -name \"*.done\" | wc -l) -gt 0"}
+  - {kind: "gate", gate_id: "stop-honored"}
+effects:
+  - {kind: "run", cmd: "python3 /work/runtime/executor.py integrator drain"}
+  - {kind: "run", cmd: "python3 /work/runtime/gates.py full-suite"}
+  - {kind: "run", cmd: "python3 /work/runtime/contracts.py verify-all"}
+  - {kind: "run", cmd: "python3 /work/runtime/context.py rebuild"}
+  - {kind: "run", cmd: "python3 /work/runtime/gates.py dependency-graph"}
+  - {kind: "decide", path: "/work/decisions/cycle-<n>-integrate.json", question: "merge accepted", options: ["merge", "revert"], chosen: "merge", verified_by: "decision-present"}
+  - {kind: "evidence", path: "/work/evidence/cycle-<n>-integrate.json"}
+  - {kind: "run", cmd: "git -C /work add -A && git -C /work commit -S -m 'forge: cycle integrated'"}
+postconditions:
+  - {kind: "gate", gate_id: "commit-signed"}
+  - {kind: "gate", gate_id: "evidence-present"}
+retry: {on: ["gate_failed", "io_error"], max: 2, backoff: "exponential"}
+rollback: [{kind: "run", cmd: "git -C /work reset --hard HEAD~1"}]
+policy: {autonomous: true, human_gate: none, budget_minutes: 8, on_fail: "continue"}

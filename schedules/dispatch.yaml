@@ -1,0 +1,18 @@
+id: dispatch
+cron: "*/10 * * * *"
+scope: coordinator
+depends_on: ["plan-hour"]
+preconditions:
+  - {kind: "exists", path: "/work/projects/<active>/roadmap/hour.json"}
+  - {kind: "gate", gate_id: "stop-honored"}
+effects:
+  - {kind: "run", cmd: "python3 /work/runtime/context.py dispatch-ready-tasks"}
+  - {kind: "run", cmd: "python3 /work/runtime/context.py write-worker-queues"}
+  - {kind: "decide", path: "/work/decisions/cycle-<n>-dispatch.json", question: "task assignment", options: ["top-1", "top-2", "top-3"], chosen: "top-1", verified_by: "decision-present"}
+  - {kind: "evidence", path: "/work/evidence/cycle-<n>-dispatch.json"}
+postconditions:
+  - {kind: "exists", path: "/work/runtime/queue/worker-1.task.json"}
+  - {kind: "gate", gate_id: "decision-present"}
+retry: {on: ["io_error"], max: 3, backoff: "linear"}
+rollback: []
+policy: {autonomous: true, human_gate: none, budget_minutes: 3, on_fail: "continue"}
